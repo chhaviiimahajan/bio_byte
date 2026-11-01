@@ -1,0 +1,16 @@
+{
+  "name": "safeupi-inclusive-fraud-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Explainable synthetic UPI fraud detection demo with graph heuristics, SQLite persistence, feedback metrics and drift monitoring.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test",
+    "demo:seed": "node scripts/generate-demo.js"
+  }
+}

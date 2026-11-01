@@ -1,0 +1,14 @@
+node_modules/
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+.env
+*.log
+
+*.zip
+node_modules/
+**/node_modules/
+.env
+.env.*
+data/*.sqlite
+data/*.sqlite-*

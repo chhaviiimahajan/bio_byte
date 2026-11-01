@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inclusive Real-Time UPI Fraud Detection – Demo</title>
+  <meta name="description" content="Frontend demo that estimates UPI transaction fraud risk using fictional synthetic data.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">₹</span>
+        <div>
+          <p class="brand-name">SafeUPI Check</p>
+          <p class="brand-sub">Inclusive Real-Time UPI Fraud Detection · Demo</p>
+        </div>
+      </div>
+      <nav aria-label="Main sections">
+        <ul class="nav-list" id="navList">
+          <li><button type="button" class="nav-btn" data-view="dashboard">Dashboard</button></li>
+          <li><button type="button" class="nav-btn" data-view="checker">Check a payment</button></li>
+          <li><button type="button" class="nav-btn" data-view="alerts">Alerts</button></li>
+          <li><button type="button" class="nav-btn" data-view="network">Network view</button></li>
+          <li><button type="button" class="nav-btn" data-view="explain">Explainability &amp; fairness</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="demo-banner" role="note">
+    <strong>Demo only.</strong> All people, accounts and transactions are fictional. Scores are estimates from simple demo rules and are <strong>not proof of fraud</strong>. Nothing is ever blocked automatically. Never type an OTP, PIN, password or banking credential anywhere in this app.
+  </div>
+
+  <main id="main" tabindex="-1">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view" aria-labelledby="h-dashboard">
+      <h1 id="h-dashboard" tabindex="-1">Dashboard</h1>
+      <p class="lead">A synthetic overview for the fictional user <strong id="profileName"></strong>.</p>
+      <div class="cards" id="summaryCards"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>Recent transactions</h2>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">Recent synthetic transactions with risk category</caption>
+              <thead>
+                <tr><th scope="col">When</th><th scope="col">Recipient</th><th scope="col">Type</th><th scope="col" class="num">Amount</th><th scope="col">Risk</th></tr>
+              </thead>
+              <tbody id="recentBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Typical behaviour (fictional user)</h2>
+          <dl class="profile" id="profileList"></dl>
+          <p class="small">The demo compares each payment with this user's own pattern, not with other people's traits.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKER -->
+    <section id="view-checker" class="view" aria-labelledby="h-checker" hidden>
+      <h1 id="h-checker" tabindex="-1">Check a payment before you approve it</h1>
+      <p class="lead">Enter the details you can see on screen. The result is an estimate to help you decide, never an instruction.</p>
+
+      <div class="checker-grid">
+        <form id="checkForm" class="panel" novalidate>
+          <div class="sample-row">
+            <label for="sampleSelect">Load a sample transaction</label>
+            <div class="inline">
+              <select id="sampleSelect"></select>
+              <button type="button" class="btn btn-secondary" id="loadSample">Fill form</button>
+            </div>
+            <p class="small" id="sampleNote" aria-live="polite"></p>
+          </div>
+
+          <fieldset>
+            <legend>Payment details</legend>
+            <div class="field">
+              <label for="amount">Amount (₹)</label>
+              <input type="number" id="amount" name="amount" min="1" step="1" inputmode="numeric" required>
+            </div>
+            <div class="field">
+              <label for="paymentType">Payment type</label>
+              <select id="paymentType" name="paymentType">
+                <option value="upi">UPI payment</option>
+                <option value="collect">Collect request</option>
+                <option value="qr">QR payment</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="recipientName">Recipient or merchant name</label>
+              <input type="text" id="recipientName" name="recipientName" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="recipientId">Recipient UPI ID (fictional)</label>
+              <input type="text" id="recipientId" name="recipientId" autocomplete="off" placeholder="name@demobank">
+            </div>
+          </fieldset>
+
+          <fieldset id="qrFields" hidden>
+            <legend>QR details</legend>
+            <div class="field">
+              <label for="qrDisplayed">Merchant name shown on the QR / signboard</label>
+              <input type="text" id="qrDisplayed" name="qrDisplayed" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="qrActual">Recipient name shown by your UPI app after scanning</label>
+              <input type="text" id="qrActual" name="qrActual" autocomplete="off">
+            </div>
+            <p class="small">QR payments are normal. Only a clear name difference is treated as a signal.</p>
+          </fieldset>
+
+          <fieldset id="collectFields" hidden>
+            <legend>Collect request</legend>
+            <label class="check"><input type="checkbox" name="unexpectedCollect"> I was not expecting this request</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Recipient</legend>
+            <label class="check"><input type="checkbox" name="firstPayment"> This is my first payment to this recipient</label>
+            <label class="check"><input type="checkbox" name="reported"> The recipient has a simulated recent report</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Device and session</legend>
+            <label class="check"><input type="checkbox" name="deviceChanged"> Device or session changed recently</label>
+            <label class="check"><input type="checkbox" name="unusualLocation"> Payment is from an unusual location</label>
+            <label class="check"><input type="checkbox" name="otpEvent"> An OTP event happened recently (do not enter the OTP here)</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Does this payment differ from your usual behaviour?</legend>
+            <label class="check"><input type="checkbox" name="unusualTiming"> Unusual time of day</label>
+            <label class="check"><input type="checkbox" name="unusualFrequency"> Unusually many payments in a short time</label>
+            <label class="check"><input type="checkbox" name="unusualFlow"> Unusual payment flow (for example, money received then sent straight out)</label>
+            <label class="check"><input type="checkbox" name="rapidTransfers"> Several rapid transfers just before this one</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Message cues (optional, simulated)</legend>
+            <label class="check"><input type="checkbox" name="urgency"> Message pressures me to act urgently</label>
+            <div class="field">
+              <label for="impersonation">Message claims to be from</label>
+              <select id="impersonation" name="impersonation">
+                <option value="none">Nobody in particular / not applicable</option>
+                <option value="bank">Bank staff</option>
+                <option value="government">Government official</option>
+                <option value="merchant">A merchant</option>
+                <option value="family">A family member (new number)</option>
+                <option value="support">Customer support</option>
+              </select>
+            </div>
+            <p class="small">Message cues are indicators only. A claim in a message is not proof of who sent it.</p>
+          </fieldset>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">Check this payment</button>
+            <button type="button" class="btn btn-secondary" id="resetForm">Reset</button>
+          </div>
+          <p id="formError" class="form-error" role="alert"></p>
+        </form>
+
+        <aside class="panel result-panel" aria-labelledby="h-result">
+          <h2 id="h-result">Result</h2>
+          <div id="result" aria-live="polite" tabindex="-1">
+            <p class="placeholder">Fill in the form or load a sample, then choose “Check this payment”. Your estimate will appear here.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="view-alerts" class="view" aria-labelledby="h-alerts" hidden>
+      <h1 id="h-alerts" tabindex="-1">Alerts</h1>
+      <p class="lead">Synthetic alerts, sorted by demo score. Alerts are prompts to verify, not accusations.</p>
+      <div class="filter-bar" role="group" aria-label="Filter alerts by risk category" id="filterBar">
+        <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-filter="High" aria-pressed="false">High</button>
+        <button type="button" class="chip" data-filter="Review" aria-pressed="false">Review</button>
+        <button type="button" class="chip" data-filter="Low" aria-pressed="false">Low</button>
+      </div>
+      <p id="alertCount" class="small" aria-live="polite"></p>
+      <ul class="alert-list" id="alertList"></ul>
+    </section>
+
+    <!-- NETWORK -->
+    <section id="view-network" class="view" aria-labelledby="h-network" hidden>
+      <h1 id="h-network" tabindex="-1">Network view</h1>
+      <p class="lead">A small synthetic graph showing how a mule-account pattern might look. Select a node for details.</p>
+      <div class="panel">
+        <div class="legend" aria-label="Legend">
+          <span><svg width="46" height="12" aria-hidden="true"><line x1="2" y1="6" x2="44" y2="6" class="e-rapid"/></svg> Rapid pass-through (thick line)</span>
+          <span><svg width="46" height="12" aria-hidden="true"><line x1="2" y1="6" x2="44" y2="6" class="e-new"/></svg> New link (dashed line)</span>
+          <span><svg width="46" height="12" aria-hidden="true"><line x1="2" y1="6" x2="44" y2="6" class="e-normal"/></svg> Established, ordinary link (thin line)</span>
+        </div>
+        <div class="graph-wrap">
+          <svg id="graph" viewBox="0 0 800 430" role="group" aria-label="Synthetic transaction network graph"></svg>
+        </div>
+        <div class="node-detail" id="nodeDetail" aria-live="polite" tabindex="-1">
+          <p>Select a node (click, or focus and press Enter) to see why it appears in this pattern.</p>
+        </div>
+        <p class="notice"><strong>Important:</strong> a network link alone does not prove wrongdoing. People pay shared merchants, landlords and relatives all the time. This view only highlights a pattern worth human review.</p>
+      </div>
+      <div class="panel">
+        <h2>Links in text form</h2>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">Synthetic network links</caption>
+            <thead><tr><th scope="col">From</th><th scope="col">To</th><th scope="col" class="num">Amount</th><th scope="col">Pattern</th></tr></thead>
+            <tbody id="edgeBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPLAIN -->
+    <section id="view-explain" class="view" aria-labelledby="h-explain" hidden>
+      <h1 id="h-explain" tabindex="-1">Explainability &amp; fairness</h1>
+      <p class="lead">How the demo score is built, and how a team might monitor false alerts across groups.</p>
+
+      <div class="panel">
+        <h2>Signals behind your latest check</h2>
+        <div id="latestSignals"><p class="placeholder">No payment checked yet. Use “Check a payment” to see contributions here.</p></div>
+      </div>
+
+      <div class="panel">
+        <h2>How scoring works (demo rules)</h2>
+        <ul class="plain">
+          <li><strong>Combinations matter.</strong> Context signals (new device, unusual location, OTP event) are weak on their own and can never produce High alone.</li>
+          <li><strong>High needs at least two independent kinds of signal</strong> beyond context, for example a new recipient plus a message cue plus unusual behaviour.</li>
+          <li><strong>QR payments are not suspicious by themselves.</strong> Only a clear mismatch between displayed and actual recipient names counts.</li>
+          <li><strong>Never used as signals:</strong> age, disability, caste, religion, gender or any other protected trait.</li>
+          <li><strong>No OTPs, PINs, passwords or credentials</strong> are requested, shown or stored.</li>
+        </ul>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">Signal catalogue with demo weights</caption>
+            <thead><tr><th scope="col">Signal</th><th scope="col">Kind</th><th scope="col" class="num">Demo points</th><th scope="col">Meaning</th></tr></thead>
+            <tbody id="catalogBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Fairness review (reviewer-labelled demo data)</h2>
+        <p class="notice"><strong>No fabricated measurements.</strong> Group results appear only after sufficient synthetic or properly authorized transactions have been independently reviewed.</p>
+        <p class="small">Metric: share of reviewer-confirmed legitimate payments flagged Review or High. Optional audit groups are monitoring metadata only and are never score inputs. Status: <strong id="overallRate">Not yet measurable</strong>.</p>
+        <div id="fairness"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Frontend demo with fictional data. Scores, graph signals, alerts and storage are provided by the local Node.js API and SQLite database. Reviewer feedback is required for performance metrics. This demo does not connect to UPI or block payments.</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
